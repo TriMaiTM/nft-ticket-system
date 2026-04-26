@@ -1,4 +1,5 @@
 import { ConnectWalletButton } from "@/components/wallet/connect-wallet-button";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -16,19 +17,19 @@ export default function Home() {
       <div className="hero-content-layer">
         <nav className="hero-navbar" aria-label="Primary">
           <div className="hero-navbar-left">
-            <a href="#" className="hero-logo" aria-label="Homepage">
+            <Link href="/" className="hero-logo" aria-label="Homepage">
               LOGOIPSUM
-            </a>
+            </Link>
 
             <div className="hero-nav-links" role="list">
               {[
-                "Get Started",
-                "Developers",
-                "Features",
-                "Resources",
-              ].map((label) => (
-                <a className="hero-nav-link" href="#" key={label} role="listitem">
-                  <span>{label}</span>
+                { label: "Events", href: "/events" },
+                { label: "My Tickets", href: "/my-tickets" },
+                { label: "Organizer", href: "/events" },
+                { label: "Marketplace", href: "#" },
+              ].map((item) => (
+                <Link className="hero-nav-link" href={item.href} key={item.label} role="listitem">
+                  <span>{item.label}</span>
                   <svg
                     width="14"
                     height="14"
@@ -45,7 +46,7 @@ export default function Home() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -62,18 +63,17 @@ export default function Home() {
             </div>
 
             <div className="hero-title-block">
-              <h1 className="hero-title">Web3 at the Speed of Experience</h1>
+              <h1 className="hero-title">NFT Tickets at the Speed of Experience</h1>
               <p className="hero-subtitle">
-                Powering seamless experiences and real-time connections, EOS is
-                the base for creators who move with purpose, leveraging
-                resilience, speed, and scale to shape the future.
+                Discover verified on-chain events, mint your tickets in seconds,
+                and move through check-in with seamless wallet-native access.
               </p>
             </div>
 
-            <button className="pill-button pill-button-light" type="button">
+            <Link href="/events" className="pill-button pill-button-light">
               <span className="pill-button-glow" aria-hidden="true" />
-              <span className="pill-button-inner">Join Waitlist</span>
-            </button>
+              <span className="pill-button-inner">Browse Events</span>
+            </Link>
           </main>
         </div>
       </div>

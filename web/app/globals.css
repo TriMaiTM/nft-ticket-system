@@ -229,6 +229,188 @@ body {
   color: rgb(248 113 113 / 100%);
 }
 
+.events-root {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.events-main {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 64px 24px 100px;
+}
+
+.events-header {
+  max-width: 760px;
+  margin-bottom: 36px;
+}
+
+.events-eyebrow {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 60%);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.events-title {
+  margin: 0;
+  font-size: 44px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.events-subtitle {
+  margin: 12px 0 0;
+  max-width: 640px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgb(255 255 255 / 75%);
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.events-empty {
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: rgb(17 24 39 / 55%);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 30px;
+  color: rgb(255 255 255 / 78%);
+}
+
+.events-empty p {
+  margin: 0;
+}
+
+.events-empty p + p {
+  margin-top: 8px;
+  color: rgb(255 255 255 / 58%);
+}
+
+.event-card {
+  border: 1px solid rgb(255 255 255 / 14%);
+  background: linear-gradient(180deg, rgb(17 24 39 / 75%), rgb(3 7 18 / 72%));
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.event-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.event-status,
+.event-chain {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 10%);
+}
+
+.event-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.event-description {
+  margin: 0;
+  color: rgb(255 255 255 / 70%);
+  line-height: 1.65;
+}
+
+.event-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.event-meta-label {
+  margin: 0;
+  font-size: 12px;
+  color: rgb(255 255 255 / 52%);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.event-meta-value {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: rgb(255 255 255 / 92%);
+}
+
+.event-card-cta {
+  width: fit-content;
+  text-decoration: none;
+}
+
+.buy-ticket-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.buy-ticket-message {
+  margin: 0;
+  font-size: 12px;
+}
+
+.buy-ticket-message.ok {
+  color: rgb(74 222 128 / 100%);
+}
+
+.buy-ticket-message.err {
+  color: rgb(248 113 113 / 100%);
+}
+
+.event-inline-link {
+  color: rgb(255 255 255 / 95%);
+  text-decoration: underline;
+}
+
+.tx-line {
+  word-break: break-all;
+}
+
+@media (min-width: 768px) {
+  .events-main {
+    padding: 76px 56px 110px;
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .event-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .events-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 768px) {
   .hero-nav-links {
     display: inline-flex;
