@@ -81,6 +81,7 @@ model Event {
 model TicketTier {
   id          String   @id @default(cuid())
   eventId     String
+  onchainTierId Int?
   name        String
   price       Decimal  @db.Decimal(18, 6)
   maxQuantity Int
@@ -92,6 +93,7 @@ model TicketTier {
 
   event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   tickets Ticket[]
+  @@index([eventId, onchainTierId])
 }
 
 model Ticket {

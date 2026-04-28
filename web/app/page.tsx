@@ -1,4 +1,5 @@
 import { ConnectWalletButton } from "@/components/wallet/connect-wallet-button";
+import { RoleLinks } from "@/components/navigation/role-links";
 import Link from "next/link";
 
 export default function Home() {
@@ -21,34 +22,7 @@ export default function Home() {
               LOGOIPSUM
             </Link>
 
-            <div className="hero-nav-links" role="list">
-              {[
-                { label: "Events", href: "/events" },
-                { label: "My Tickets", href: "/my-tickets" },
-                { label: "Organizer", href: "/events" },
-                { label: "Marketplace", href: "#" },
-              ].map((item) => (
-                <Link className="hero-nav-link" href={item.href} key={item.label} role="listitem">
-                  <span>{item.label}</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M3.5 5.25L7 8.75L10.5 5.25"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </Link>
-              ))}
-            </div>
+            <RoleLinks />
           </div>
 
           <ConnectWalletButton />

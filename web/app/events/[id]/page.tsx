@@ -13,6 +13,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
+      organizer: {
+        select: {
+          walletAddress: true,
+        },
+      },
       ticketTiers: {
         orderBy: { price: "asc" },
       },
@@ -53,6 +58,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             <p className="events-subtitle">
               {event.description ?? "Organizer will update event detail soon."}
             </p>
+            {!event.contractAddress ? (
+              <p className="buy-ticket-message err">
+                Event is waiting for organizer to publish on-chain before tickets can be bought.
+              </p>
+            ) : null}
           </header>
 
           <div className="events-grid">
@@ -82,7 +92,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     <p className="event-meta-value">{event.venue ?? "TBA"}</p>
                   </div>
                 </div>
-                <BuyTicketButton tierId={tier.id} />
+                <BuyTicketButton
+                  tierId={tier.id}
+                  tierName={tier.name}
+                  tierPrice={tier.price.toString()}
+                  onchainTierId={tier.onchainTierId}
+                  eventContractAddress={event.contractAddress}
+                />
               </article>
             ))}
           </div>

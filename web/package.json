@@ -11,14 +11,18 @@
     "prisma:push": "dotenv -e .env.local -- prisma db push",
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
-    "prisma:seed": "dotenv -e .env.local -- node prisma/seed.mjs"
+    "prisma:seed": "dotenv -e .env.local -- node prisma/seed.mjs",
+    "event:link:contract": "dotenv -e .env.local -- node scripts/link-event-contract.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.100.2",
+    "@types/qrcode": "^1.5.6",
+    "html5-qrcode": "^2.3.8",
     "next": "16.2.4",
     "prisma": "^6.19.3",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "viem": "^2.48.4",

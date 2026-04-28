@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAccount, useSignMessage } from "wagmi";
 
 type SessionUser = {
@@ -18,9 +19,8 @@ async function readJson<T>(response: Response): Promise<T> {
 export function useWalletAuth() {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const queryClient = useQueryClient();
 
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [isLoadingSession] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,18 +29,18 @@ export function useWalletAuth() {
     [address]
   );
 
-  const refreshSession = useCallback(async () => {
-    try {
+  const sessionQuery = useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: async () => {
       const response = await fetch("/api/auth/me", {
         method: "GET",
         credentials: "include",
       });
       const payload = await readJson<{ data: SessionUser | null }>(response);
-      setUser(payload.data ?? null);
-    } catch {
-      setUser(null);
-    }
-  }, []);
+      return payload.data ?? null;
+    },
+    staleTime: 1000 * 30,
+  });
 
   const signIn = useCallback(async () => {
     if (!normalizedAddress) {
@@ -92,7 +92,7 @@ export function useWalletAuth() {
         throw new Error(verifyPayload.error ?? "Wallet authentication failed");
       }
 
-      setUser(verifyPayload.data);
+      queryClient.setQueryData(["auth", "me"], verifyPayload.data);
       return true;
     } catch (err) {
       const fallback = "Failed to sign in with wallet";
@@ -102,7 +102,7 @@ export function useWalletAuth() {
     } finally {
       setIsSigningIn(false);
     }
-  }, [normalizedAddress, signMessageAsync]);
+  }, [normalizedAddress, queryClient, signMessageAsync]);
 
   const signOut = useCallback(async () => {
     setError(null);
@@ -110,10 +110,12 @@ export function useWalletAuth() {
       method: "POST",
       credentials: "include",
     });
-    setUser(null);
-  }, []);
+    queryClient.setQueryData(["auth", "me"], null);
+  }, [queryClient]);
 
   const effectiveUser = useMemo(() => {
+    const user = sessionQuery.data ?? null;
+
     if (!isConnected || !normalizedAddress || !user) {
       return null;
     }
@@ -123,16 +125,18 @@ export function useWalletAuth() {
     }
 
     return user;
-  }, [isConnected, normalizedAddress, user]);
+  }, [isConnected, normalizedAddress, sessionQuery.data]);
 
   return {
     user: effectiveUser,
-    isLoadingSession,
+    isLoadingSession: sessionQuery.isLoading || sessionQuery.isFetching,
     isSigningIn,
     isAuthenticated: !!effectiveUser,
     error,
     signIn,
     signOut,
-    refreshSession,
+    refreshSession: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
   };
 }

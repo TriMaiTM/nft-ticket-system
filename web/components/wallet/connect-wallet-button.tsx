@@ -14,6 +14,16 @@ export function ConnectWalletButton() {
     signOut,
   } = useWalletAuth();
 
+  async function handleSignIn() {
+    await signIn();
+    window.dispatchEvent(new Event("ticketnft-auth-changed"));
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    window.dispatchEvent(new Event("ticketnft-auth-changed"));
+  }
+
   return (
     <div className="wallet-actions">
       <ConnectButton.Custom>
@@ -65,7 +75,7 @@ export function ConnectWalletButton() {
 
           if (!isAuthenticated || user?.walletAddress !== account.address.toLowerCase()) {
             return (
-              <button className="pill-button pill-button-dark" onClick={signIn} type="button">
+              <button className="pill-button pill-button-dark" onClick={handleSignIn} type="button">
                 <span className="pill-button-glow" aria-hidden="true" />
                 <span className="pill-button-inner">
                   {isSigningIn ? "Signing In..." : "Sign In Wallet"}
@@ -88,7 +98,7 @@ export function ConnectWalletButton() {
       </ConnectButton.Custom>
 
       {isAuthenticated ? (
-        <button className="wallet-signout" onClick={signOut} type="button">
+        <button className="wallet-signout" onClick={handleSignOut} type="button">
           Sign out
         </button>
       ) : null}

@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { EventCard } from "@/components/events/event-card";
+import { RoleLinks } from "@/components/navigation/role-links";
 import { prisma } from "@/lib/prisma";
 
 export default async function EventsPage() {
   const events = await prisma.event.findMany({
+    where: {
+      contractAddress: { not: null },
+    },
     orderBy: { startDate: "asc" },
     include: {
       ticketTiers: {
@@ -58,17 +62,7 @@ export default async function EventsPage() {
             <Link href="/" className="hero-logo" aria-label="Homepage">
               LOGOIPSUM
             </Link>
-            <div className="hero-nav-links" role="list">
-              <Link className="hero-nav-link" href="/events" role="listitem">
-                <span>Events</span>
-              </Link>
-              <Link className="hero-nav-link" href="/my-tickets" role="listitem">
-                <span>My Tickets</span>
-              </Link>
-              <Link className="hero-nav-link" href="#" role="listitem">
-                <span>Organizer</span>
-              </Link>
-            </div>
+            <RoleLinks />
           </div>
 
           <Link href="/" className="pill-button pill-button-dark">

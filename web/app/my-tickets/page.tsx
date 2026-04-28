@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
+import { TicketQR } from "@/components/tickets/ticket-qr";
 
 function formatDate(value: Date): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -59,6 +60,11 @@ export default async function MyTicketsPage() {
           name: true,
           price: true,
           benefits: true,
+        },
+      },
+      owner: {
+        select: {
+          walletAddress: true,
         },
       },
     },
@@ -136,6 +142,12 @@ export default async function MyTicketsPage() {
                       <p className="event-meta-value tx-line">{ticket.txHash ?? "Pending"}</p>
                     </div>
                   </div>
+                  <TicketQR
+                    ticketId={ticket.id}
+                    eventId={ticket.eventId}
+                    tokenId={ticket.tokenId}
+                    ownerAddress={ticket.owner.walletAddress}
+                  />
                 </article>
               ))}
             </div>

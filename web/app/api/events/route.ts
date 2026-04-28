@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const events = await prisma.event.findMany({
+      where: {
+        contractAddress: { not: null },
+      },
       orderBy: { createdAt: "desc" },
       include: {
         organizer: {
@@ -16,10 +19,12 @@ export async function GET() {
         ticketTiers: {
           select: {
             id: true,
+            onchainTierId: true,
             name: true,
             price: true,
             maxQuantity: true,
             soldCount: true,
+            benefits: true,
           },
         },
       },
