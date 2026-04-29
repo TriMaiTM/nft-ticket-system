@@ -49,9 +49,22 @@ export function TicketQR({ ticketId, eventId, tokenId, ownerAddress }: TicketQRP
       </button>
 
       {showQR && (
-        <div className="ticket-qr-canvas-wrap">
+        <div className="ticket-qr-canvas-wrap" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <canvas ref={canvasRef} />
           <p className="ticket-qr-hint">Quét mã QR này tại cổng check-in</p>
+          <button 
+            className="pill-button pill-button-light" 
+            onClick={() => {
+              const payload = JSON.stringify({ ticketId, eventId, tokenId, owner: ownerAddress, ts: Date.now() });
+              navigator.clipboard.writeText(payload);
+              alert("Đã copy dữ liệu QR (dùng để test Check-in)");
+            }}
+            type="button"
+            style={{ fontSize: "12px", padding: "6px 16px" }}
+          >
+            <span className="pill-button-glow" aria-hidden="true" />
+            <span className="pill-button-inner">Copy Payload (Test)</span>
+          </button>
         </div>
       )}
     </div>
