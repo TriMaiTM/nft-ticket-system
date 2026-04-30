@@ -4,11 +4,15 @@ pragma solidity ^0.8.24;
 import {EventTicketNFT} from "./EventTicketNFT.sol";
 
 contract EventFactory {
+    struct TierConfig {
+        uint256 price;
+        uint256 maxSupply;
+    }
+
     struct EventConfig {
         string name;
         string symbol;
-        uint256 maxSupply;
-        uint256 ticketPrice;
+        TierConfig[] tiers;
         uint96 royaltyBps;
         uint256 maxPerWallet;
     }
@@ -19,12 +23,19 @@ contract EventFactory {
     event EventCreated(address indexed organizer, address indexed eventContract, string name, string symbol);
 
     function createEvent(EventConfig calldata config) external returns (address eventContract) {
+        EventTicketNFT.TierConfig[] memory tiers = new EventTicketNFT.TierConfig[](config.tiers.length);
+        for (uint256 i = 0; i < config.tiers.length; i++) {
+            tiers[i] = EventTicketNFT.TierConfig({
+                price: config.tiers[i].price,
+                maxSupply: config.tiers[i].maxSupply
+            });
+        }
+
         EventTicketNFT deployed = new EventTicketNFT(
             config.name,
             config.symbol,
             msg.sender,
-            config.maxSupply,
-            config.ticketPrice,
+            tiers,
             config.royaltyBps,
             config.maxPerWallet
         );

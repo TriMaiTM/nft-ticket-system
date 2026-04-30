@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getSessionCookieName, verifySessionToken } from "@/lib/auth";
 import { TicketQR } from "@/components/tickets/ticket-qr";
+import { ListTicketButton } from "@/components/tickets/list-ticket-button";
 
 function formatDate(value: Date): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -53,6 +54,7 @@ export default async function MyTicketsPage() {
           venue: true,
           startDate: true,
           chainId: true,
+          contractAddress: true,
         },
       },
       tier: {
@@ -74,6 +76,7 @@ export default async function MyTicketsPage() {
   return (
     <section className="events-root">
       <video
+        suppressHydrationWarning
         className="hero-video"
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4"
         autoPlay
@@ -115,7 +118,7 @@ export default async function MyTicketsPage() {
               {tickets.map((ticket) => (
                 <article className="event-card" key={ticket.id}>
                   <div className="event-card-top">
-                    <span className="event-status">{ticket.status}</span>
+                    <span className="event-status">{ticket.status === "LISTED" ? "ĐANG RAO BÁN" : ticket.status}</span>
                     <span className="event-chain">Token #{ticket.tokenId}</span>
                   </div>
 
@@ -142,12 +145,28 @@ export default async function MyTicketsPage() {
                       <p className="event-meta-value tx-line">{ticket.txHash ?? "Pending"}</p>
                     </div>
                   </div>
-                  <TicketQR
-                    ticketId={ticket.id}
-                    eventId={ticket.eventId}
-                    tokenId={ticket.tokenId}
-                    ownerAddress={ticket.owner.walletAddress}
-                  />
+                  {ticket.status === "LISTED" ? (
+                    <div style={{ marginTop: "16px", textAlign: "center", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: "8px" }}>
+                      <p style={{ margin: 0, color: "#aaa" }}>Vé đang được rao bán trên Marketplace.</p>
+                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#666" }}>Bạn không thể lấy mã QR lúc này.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <TicketQR
+                        ticketId={ticket.id}
+                        eventId={ticket.eventId}
+                        tokenId={ticket.tokenId}
+                        ownerAddress={ticket.owner.walletAddress}
+                      />
+                      {ticket.status === "MINTED" && !ticket.isUsed && ticket.event.contractAddress && (
+                        <ListTicketButton
+                          ticketId={ticket.id}
+                          tokenId={ticket.tokenId}
+                          contractAddress={ticket.event.contractAddress}
+                        />
+                      )}
+                    </>
+                  )}
                 </article>
               ))}
             </div>

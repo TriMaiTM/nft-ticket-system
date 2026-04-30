@@ -1,0 +1,230 @@
+# TicketNFT — System Flow & Money Flow
+
+## Tổng quan hệ thống
+
+Hệ thống bán vé sự kiện NFT gồm 3 layer:
+
+| Layer | Công nghệ | Vai trò |
+|-------|-----------|---------|
+| **Frontend** | Next.js + Wagmi + RainbowKit | UI, wallet connect, gọi smart contract |
+| **Backend** | Next.js API Routes + Prisma + Supabase | Auth, quản lý event/ticket data |
+| **Blockchain** | Solidity + Hardhat/Polygon Amoy | Mint NFT, lưu trữ tiền, royalty |
+
+---
+
+## Các vai trò (Actors)
+
+| Vai trò | Mô tả |
+|---------|-------|
+| **Organizer** | Tạo sự kiện, publish on-chain, rút tiền bán vé |
+| **User/Buyer** | Mua vé (mint NFT), check-in sự kiện |
+| **Admin** | Quản trị hệ thống (future) |
+
+---
+
+## Flow chi tiết
+
+### 1. Organizer tạo sự kiện (Off-chain)
+
+```mermaid
+sequenceDiagram
+    participant O as Organizer
+    participant FE as Frontend
+    participant API as API Server
+    participant DB as Supabase DB
+
+    O->>FE: Tạo event mới (title, venue, date, tiers)
+    FE->>API: POST /api/organizer/events
+    API->>DB: INSERT Event (status: DRAFT)
+    DB-->>API: Event created
+    API-->>FE: { eventId }
+    FE-->>O: Event draft created ✅
+```
+
+> [!NOTE]
+> Event ở trạng thái **DRAFT** chỉ tồn tại trong database. Chưa có gì trên blockchain.
+
+---
+
+### 2. Organizer Publish On-chain
+
+```mermaid
+sequenceDiagram
+    participant O as Organizer Wallet
+    participant FE as Frontend
+    participant EF as EventFactory Contract
+    participant NFT as EventTicketNFT Contract
+    participant API as API Server
+    participant DB as Database
+
+    O->>FE: Click "Publish On-chain"
+    FE->>EF: createEvent(name, symbol, tiers, royalty, maxPerWallet)
+    EF->>NFT: Deploy new EventTicketNFT contract
+    NFT-->>EF: Contract address
+    EF-->>FE: EventCreated event log
+    FE->>FE: Parse contract address from logs
+    FE->>API: POST /api/events/{id}/go-live
+    API->>DB: UPDATE Event (status: LIVE, contractAddress)
+    API->>DB: UPDATE TicketTiers (onchainTierId mapping)
+    DB-->>API: Done
+    API-->>FE: Success
+    FE-->>O: "Publish thành công!" ✅
+```
+
+> [!IMPORTANT]
+> Mỗi event khi publish sẽ tạo ra **1 smart contract riêng** (EventTicketNFT). Contract này:
+> - Thuộc sở hữu của Organizer (`owner = organizer address`)
+> - Chứa cấu hình tier (giá, số lượng tối đa)
+> - Nhận và giữ tiền bán vé
+> - Chỉ Organizer mới được rút tiền
+
+---
+
+### 3. User mua vé (Mint NFT) — 💰 DÒNG TIỀN
+
+```mermaid
+sequenceDiagram
+    participant U as User Wallet
+    participant FE as Frontend
+    participant NFT as EventTicketNFT Contract
+    participant API as API Server
+    participant DB as Database
+
+    U->>FE: Click "Mua vé" (tier General, 0.05 ETH)
+    FE->>NFT: mint(tierId, tokenURI) + gửi 0.05 ETH
+    Note over NFT: Contract nhận 0.05 ETH<br/>và giữ trong balance
+    NFT->>NFT: Check: tier tồn tại? Còn vé? Đúng giá? Max/wallet?
+    NFT->>U: Mint NFT token → User sở hữu NFT
+    NFT-->>FE: TicketMinted event (tokenId, tierId)
+    FE->>FE: Parse txHash + tokenId từ receipt
+    FE->>API: POST /api/tickets/buy { tierId, txHash, tokenId }
+    API->>API: Verify txHash on-chain ✅
+    API->>DB: INSERT Ticket (txHash, tokenId, status: VALID)
+    DB-->>API: Ticket created
+    API-->>FE: { tokenId }
+    FE-->>U: "Mua vé thành công! Token #1" ✅
+```
+
+> [!IMPORTANT]
+> **Tiền mua vé (0.05 ETH) đi đâu?**
+> 
+> Tiền **NẰM TRONG CONTRACT** (`EventTicketNFT.balance`), KHÔNG tự động chuyển cho Organizer.
+> Organizer phải gọi `withdraw()` để rút tiền.
+
+---
+
+### 4. Organizer rút tiền — 💰 DÒNG TIỀN RA
+
+```mermaid
+sequenceDiagram
+    participant O as Organizer Wallet
+    participant NFT as EventTicketNFT Contract
+
+    O->>NFT: withdraw()
+    NFT->>NFT: Check: chỉ owner mới được rút
+    NFT->>NFT: amount = address(this).balance
+    NFT->>O: Transfer toàn bộ balance → Organizer
+    NFT-->>O: FundsWithdrawn event
+    Note over O: Organizer nhận toàn bộ<br/>tiền bán vé ✅
+```
+
+> [!WARNING]
+> Hiện tại frontend **chưa có nút Withdraw**. Organizer cần gọi `withdraw()` thủ công qua Etherscan hoặc Hardhat console. Đây là feature cần bổ sung.
+
+---
+
+## Sơ đồ dòng tiền tổng quan
+
+```mermaid
+flowchart LR
+    subgraph Users
+        U1[User A]
+        U2[User B]
+        U3[User C]
+    end
+
+    subgraph Blockchain
+        NFT["EventTicketNFT Contract<br/>💰 Balance: 0.15 ETH"]
+    end
+
+    subgraph Organizer
+        OW[Organizer Wallet]
+    end
+
+    U1 -->|"mint() + 0.05 ETH"| NFT
+    U2 -->|"mint() + 0.05 ETH"| NFT
+    U3 -->|"mint() + 0.05 ETH"| NFT
+    NFT -->|"withdraw()"| OW
+
+    style NFT fill:#1a1a2e,stroke:#e94560,color:#fff
+    style OW fill:#0f3460,stroke:#16213e,color:#fff
+```
+
+---
+
+## Bảng phí & dòng tiền
+
+| Hành động | Ai trả gas? | Tiền đi đâu? |
+|-----------|-------------|---------------|
+| **Publish event** | Organizer | Chỉ gas fee (không có tiền vé) |
+| **Mua vé (mint)** | User/Buyer | Gas fee + giá vé → Contract balance |
+| **Withdraw** | Organizer | Gas fee. Contract balance → Organizer wallet |
+| **Transfer vé** | Người bán/gửi | Chỉ gas fee |
+| **Check-in** | Organizer | Chỉ gas fee |
+
+---
+
+## Royalty (ERC-2981)
+
+Contract hỗ trợ **ERC-2981 royalty** với `royaltyBps = 500` (5%):
+
+- Khi vé được **bán lại** trên marketplace (OpenSea, Blur...), marketplace sẽ đọc `royaltyInfo()` và tự động trích 5% cho Organizer
+- Đây là **tiêu chuẩn gợi ý** — marketplace có thể chọn không tuân thủ
+- Hiện tại hệ thống chưa có marketplace nội bộ
+
+---
+
+## Trạng thái vé
+
+```mermaid
+stateDiagram-v2
+    [*] --> VALID: mint() thành công
+    VALID --> USED: useTicket() by Organizer
+    VALID --> TRANSFERRED: transfer() to another wallet
+    TRANSFERRED --> USED: useTicket()
+    USED --> [*]: Vé đã sử dụng, không thể transfer
+
+    note right of VALID: Vé hợp lệ, có thể check-in
+    note right of USED: Vé đã quét, không thể chuyển
+```
+
+---
+
+## Bảo vệ On-chain
+
+| Rule | Enforce bởi |
+|------|-------------|
+| Đúng giá vé | `IncorrectPayment()` — Contract |
+| Hết vé theo tier | `TierSoldOut()` — Contract |
+| Hết vé toàn bộ | `MintSoldOut()` — Contract |
+| Tối đa vé/ví | `MaxPerWalletExceeded()` — Contract |
+| Vé đã dùng không chuyển được | `TransfersDisabled()` — Contract |
+| Vé đã quét rồi | `TicketAlreadyUsed()` — Contract |
+| Chỉ organizer rút tiền | `onlyOwner` modifier — Contract |
+
+---
+
+## Tóm tắt: Tiền có về Organizer không?
+
+**CÓ**, nhưng **không tự động**:
+
+1. User mint vé → tiền nằm trong **contract balance**
+2. Organizer gọi `withdraw()` → **toàn bộ balance** chuyển về ví Organizer
+3. Hiện tại chưa có nút Withdraw trên UI → cần bổ sung
+
+> [!TIP]
+> **Cần làm tiếp:**
+> 1. Thêm nút **"Rút tiền"** trên trang Organizer Events
+> 2. Hiển thị **contract balance** cho Organizer
+> 3. Xây dựng **Marketplace** cho mua bán vé lại (secondary market)
+> 4. **QR Check-in** flow

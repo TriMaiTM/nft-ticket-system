@@ -6,7 +6,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
-    "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy"
+    "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
+    "create:event:amoy": "hardhat run scripts/createEvent.ts --network amoy"
   },
   "keywords": [],
   "author": "",

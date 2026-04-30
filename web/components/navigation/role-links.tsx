@@ -12,6 +12,9 @@ export function RoleLinks() {
         <Link className="hero-nav-link" href="/events" role="listitem">
           <span>Ticket Store</span>
         </Link>
+        <Link className="hero-nav-link" href="/marketplace" role="listitem">
+          <span>Marketplace</span>
+        </Link>
         <Link className="hero-nav-link" href="/my-tickets" role="listitem">
           <span>My Tickets</span>
         </Link>
@@ -31,6 +34,9 @@ export function RoleLinks() {
         <Link className="hero-nav-link" href="/events" role="listitem">
           <span>Ticket Store</span>
         </Link>
+        <Link className="hero-nav-link" href="/marketplace" role="listitem">
+          <span>Marketplace</span>
+        </Link>
       </div>
     );
   }
@@ -39,6 +45,9 @@ export function RoleLinks() {
     <div className="hero-nav-links" role="list">
       <Link className="hero-nav-link" href="/events" role="listitem">
         <span>Ticket Store</span>
+      </Link>
+      <Link className="hero-nav-link" href="/marketplace" role="listitem">
+        <span>Marketplace</span>
       </Link>
       <Link className="hero-nav-link" href="/my-tickets" role="listitem">
         <span>My Tickets</span>

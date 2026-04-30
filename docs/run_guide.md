@@ -72,6 +72,14 @@ Wallet auth MVP API da san sang:
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 
+Phan quyen vai tro UI:
+- User thuong (`USER`): thay Ticket Store (`/events`) + My Tickets (`/my-tickets`) va quyen mua ve.
+- Ban to chuc (`ORGANIZER`/`ADMIN`): thay Organizer Workspace, co My Events (`/organizer/events`) va Create Event (`/organizer/events/new`).
+- Event moi tao se o trang thai draft. Sau do ban to chuc bam `Publish On-chain` trong `My Events` de tao contract ticket tren chain.
+- Vi moi dang nhap lan dau mac dinh la `USER`, nhung khi bam Create Event lan dau he thong se tu dong nang role len `ORGANIZER` (khong can vao Supabase sua tay).
+- Public Ticket Store chi hien event da publish on-chain (`contractAddress != null`). Draft chi organizer thay trong Workspace.
+- MVP contract hien tai chi ho tro 1 gia mint cho 1 event. Neu muon co nhieu hang ve voi nhieu gia khac nhau, can nang cap contract truoc khi publish.
+
 Seed du lieu demo (de test trang events nhanh):
 
 ```powershell
@@ -84,6 +92,14 @@ Kiem tra wallet auth ngay tren UI:
 - Sau khi ket noi thanh cong, nut doi thanh `Sign In Wallet`.
 - Bam `Sign In Wallet` va ky message tren vi.
 - Neu thanh cong, nut hien dia chi vi va co `Sign out`.
+
+Kiem tra buy ticket flow:
+- Vao `/events` -> chon event -> vao detail.
+- Bam `Buy Ticket` tai 1 tier.
+- App bat buoc event da co `contractAddress` roi moi mint on-chain va xac nhan vao DB.
+- Neu event chua duoc publish, nut mua se hien `Not Live Yet` va khong cho mua.
+- Ban to chuc mo `My Events` -> bam `Publish On-chain` de dua event len chain.
+- Vao `/my-tickets` de kiem tra ticket vua mua.
 
 ## 4. Build thu production
 Trong thu muc web:

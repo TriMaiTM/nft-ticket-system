@@ -45,6 +45,33 @@ export const eventTicketNftAbi = [
     outputs: [{ name: "", type: "address" }],
   },
   {
+    type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "tokenId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "getApproved",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "isApprovedForAll",
+    stateMutability: "view",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "operator", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
     type: "event",
     name: "TicketMinted",
     inputs: [
@@ -155,3 +182,48 @@ export function mapLegacyTierNameToId(tierName: string): number {
   }
   return 0;
 }
+
+export const TicketMarketplaceAbi = [
+  {
+    type: "function",
+    name: "listTicket",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "nft", type: "address" },
+      { name: "tokenId", type: "uint256" },
+      { name: "price", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "buyTicket",
+    stateMutability: "payable",
+    inputs: [
+      { name: "nft", type: "address" },
+      { name: "tokenId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "cancelListing",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "nft", type: "address" },
+      { name: "tokenId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "updatePrice",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "nft", type: "address" },
+      { name: "tokenId", type: "uint256" },
+      { name: "newPrice", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;

@@ -66,10 +66,12 @@
 - [x] Dung base design system va reusable UI components (landing + wallet state components).
 
 ### Phase 3 (Core Product Flows)
-- Event detail + buy ticket flow.
-- Organizer create event + contract deploy flow.
-- Mint ticket + metadata upload IPFS.
-- My tickets + QR generation.
+- [x] Event detail + ticket tiers UI flow (buy action placeholder).
+- [x] Browse events page (live data from `/api/events`).
+- [x] Organizer create event + publish on-chain flow.
+- [x] Buy ticket flow strict on-chain: bat buoc mint tx + tokenId, khong fallback DB-only.
+- [x] My tickets inventory page.
+- [ ] QR generation for ticket check-in.
 
 ### Phase 4 (Marketplace + Check-in)
 - Implement TicketMarketplace.sol + tests.
@@ -97,3 +99,4 @@
 - Theme landing: dark cinematic, video-first, high contrast typography.
 - Amoy deploy (2026-04-25): EventFactory = 0x38fBD0a1f2DA7d05B768f67c17B7B88d1F19C57e.
 - Database strategy (2026-04-26): Supabase-first, khong uu tien local PostgreSQL.
+- Strict buy policy (2026-04-26): event phai duoc go-live on-chain (co contractAddress) truoc khi mua; them scripts `contracts/scripts/createEvent.ts` va `web/scripts/link-event-contract.mjs`.

@@ -20,7 +20,9 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    hardhat: {},
+    hardhat: {
+      hardfork: "cancun",
+    },
     amoy: {
       url: AMOY_RPC_URL,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],

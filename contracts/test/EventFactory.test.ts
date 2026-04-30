@@ -12,8 +12,10 @@ describe("EventFactory + EventTicketNFT", function () {
     await factory.connect(organizer).createEvent({
       name: "TicketNFT Event",
       symbol: "TNFT",
-      maxSupply: 3,
-      ticketPrice: ethers.parseEther("0.01"),
+      tiers: [
+        { price: ethers.parseEther("0.01"), maxSupply: 2 },
+        { price: ethers.parseEther("0.02"), maxSupply: 1 },
+      ],
       royaltyBps: 500,
       maxPerWallet: 2,
     });
@@ -34,8 +36,10 @@ describe("EventFactory + EventTicketNFT", function () {
       factory.connect(organizer).createEvent({
         name: "TicketNFT Event",
         symbol: "TNFT",
-        maxSupply: 100,
-        ticketPrice: ethers.parseEther("0.01"),
+        tiers: [
+          { price: ethers.parseEther("0.01"), maxSupply: 80 },
+          { price: ethers.parseEther("0.025"), maxSupply: 20 },
+        ],
         royaltyBps: 500,
         maxPerWallet: 2,
       })
@@ -47,7 +51,23 @@ describe("EventFactory + EventTicketNFT", function () {
     expect(organizerEvents).to.have.lengthOf(1);
   });
 
-  it("supports paid minting, check-in and transfer constraints", async function () {
+  it("stores tier configuration and derives total max supply", async function () {
+    const { eventContract } = await deployFixture();
+
+    expect(await eventContract.maxSupply()).to.equal(3);
+    expect(await eventContract.tierCount()).to.equal(2);
+
+    const tier0 = await eventContract.getTier(0);
+    const tier1 = await eventContract.getTier(1);
+
+    expect(tier0.price).to.equal(ethers.parseEther("0.01"));
+    expect(tier0.maxSupply).to.equal(2);
+    expect(tier0.minted).to.equal(0);
+    expect(tier1.price).to.equal(ethers.parseEther("0.02"));
+    expect(tier1.maxSupply).to.equal(1);
+  });
+
+  it("supports paid minting, tier accounting, check-in and transfer constraints", async function () {
     const { organizer, buyer, other, eventContract } = await deployFixture();
 
     await expect(
@@ -57,12 +77,16 @@ describe("EventFactory + EventTicketNFT", function () {
     ).to.emit(eventContract, "TicketMinted");
 
     expect(await eventContract.ownerOf(1)).to.equal(buyer.address);
+    expect(await eventContract.tokenIdToTierId(1)).to.equal(0);
 
     await expect(
       eventContract
         .connect(buyer)
-        .mint(1, "ipfs://metadata-2", { value: ethers.parseEther("0.01") })
+        .mint(1, "ipfs://metadata-2", { value: ethers.parseEther("0.02") })
     ).to.not.be.reverted;
+
+    const vipTier = await eventContract.getTier(1);
+    expect(vipTier.minted).to.equal(1);
 
     await eventContract.connect(organizer).setTransferable(false);
     await expect(
@@ -77,17 +101,31 @@ describe("EventFactory + EventTicketNFT", function () {
     ).to.be.revertedWithCustomError(eventContract, "TransfersDisabled");
   });
 
-  it("reverts on incorrect payment", async function () {
+  it("reverts on incorrect payment for selected tier", async function () {
     const { buyer, eventContract } = await deployFixture();
 
     await expect(
       eventContract
         .connect(buyer)
-        .mint(0, "ipfs://metadata-1", { value: ethers.parseEther("0.009") })
+        .mint(1, "ipfs://metadata-1", { value: ethers.parseEther("0.01") })
     ).to.be.revertedWithCustomError(eventContract, "IncorrectPayment");
   });
 
-  it("reverts when max supply is exceeded", async function () {
+  it("reverts when a tier is sold out even if other tiers remain", async function () {
+    const { buyer, other, eventContract } = await deployFixture();
+
+    await eventContract
+      .connect(buyer)
+      .mint(1, "ipfs://vip-1", { value: ethers.parseEther("0.02") });
+
+    await expect(
+      eventContract
+        .connect(other)
+        .mint(1, "ipfs://vip-2", { value: ethers.parseEther("0.02") })
+    ).to.be.revertedWithCustomError(eventContract, "TierSoldOut");
+  });
+
+  it("reverts when global max supply is exceeded", async function () {
     const { organizer, buyer, other, eventContract } = await deployFixture();
 
     await eventContract
@@ -96,16 +134,16 @@ describe("EventFactory + EventTicketNFT", function () {
 
     await eventContract
       .connect(other)
-      .mint(1, "ipfs://m2", { value: ethers.parseEther("0.01") });
+      .mint(0, "ipfs://m2", { value: ethers.parseEther("0.01") });
 
     await eventContract
       .connect(organizer)
-      .organizerMint(organizer.address, 2, "ipfs://m3");
+      .organizerMint(organizer.address, 1, "ipfs://m3");
 
     await expect(
       eventContract
         .connect(organizer)
-        .organizerMint(organizer.address, 1, "ipfs://m4")
+        .organizerMint(organizer.address, 0, "ipfs://m4")
     ).to.be.revertedWithCustomError(eventContract, "MintSoldOut");
   });
 
