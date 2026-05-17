@@ -5,9 +5,9 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
-    "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
-    "create:event:amoy": "hardhat run scripts/createEvent.ts --network amoy"
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "create:event:sepolia": "hardhat run scripts/createEvent.ts --network sepolia",
+    "split:funds": "hardhat run scripts/split-funds.ts --network sepolia"
   },
   "keywords": [],
   "author": "",

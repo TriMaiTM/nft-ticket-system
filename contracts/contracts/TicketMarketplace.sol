@@ -4,8 +4,14 @@ pragma solidity ^0.8.24;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TicketMarketplace is ReentrancyGuard {
+interface IEventTicketNFT {
+    function getTierPrice(uint8 tierId) external view returns (uint256);
+    function getTokenTierId(uint256 tokenId) external view returns (uint8);
+}
+
+contract TicketMarketplace is ReentrancyGuard, Ownable {
     struct Listing {
         address seller;
         address nft;
@@ -15,6 +21,7 @@ contract TicketMarketplace is ReentrancyGuard {
     }
 
     uint96 public platformFeeBps;
+    uint16 public maxPriceMultiplierBps; // e.g. 30000 = 3x
     address public feeRecipient;
 
     mapping(bytes32 => Listing) public listings;
@@ -30,12 +37,28 @@ contract TicketMarketplace is ReentrancyGuard {
         uint256 price
     );
 
-    constructor(address feeRecipient_, uint96 platformFeeBps_) {
+    constructor(address feeRecipient_, uint96 platformFeeBps_) Ownable(msg.sender) {
         require(feeRecipient_ != address(0), "Invalid recipient");
         require(platformFeeBps_ <= 10_000, "Invalid fee");
 
         feeRecipient = feeRecipient_;
         platformFeeBps = platformFeeBps_;
+        maxPriceMultiplierBps = 30000; // 3x default
+    }
+
+    function setMaxPriceMultiplier(uint16 bps) external onlyOwner {
+        require(bps >= 10000 && bps <= 100000, "Invalid multiplier"); // 1x to 10x
+        maxPriceMultiplierBps = bps;
+    }
+
+    function setFeeRecipient(address newRecipient) external onlyOwner {
+        require(newRecipient != address(0), "Invalid recipient");
+        feeRecipient = newRecipient;
+    }
+
+    function setPlatformFee(uint96 newFeeBps) external onlyOwner {
+        require(newFeeBps <= 10_000, "Invalid fee");
+        platformFeeBps = newFeeBps;
     }
 
     function listingKey(address nft, uint256 tokenId) public pure returns (bytes32) {
@@ -51,6 +74,14 @@ contract TicketMarketplace is ReentrancyGuard {
             token.getApproved(tokenId) == address(this) || token.isApprovedForAll(msg.sender, address(this)),
             "Marketplace not approved"
         );
+
+        // Enforce max resale price: price <= originalPrice * maxMultiplier
+        try IEventTicketNFT(nft).getTokenTierId(tokenId) returns (uint8 tierId) {
+            try IEventTicketNFT(nft).getTierPrice(tierId) returns (uint256 originalPrice) {
+                uint256 maxPrice = (originalPrice * maxPriceMultiplierBps) / 10000;
+                require(price <= maxPrice, "Price exceeds maximum");
+            } catch {}
+        } catch {}
 
         bytes32 key = listingKey(nft, tokenId);
         listings[key] = Listing({
@@ -72,12 +103,16 @@ contract TicketMarketplace is ReentrancyGuard {
         require(item.seller == msg.sender, "Not seller");
 
         item.active = false;
+
+        // Note: Approval stays — seller can revoke manually if desired.
+        // Marketplace can't revoke because it's not the token owner.
+
         emit ListingCancelled(msg.sender, nft, tokenId);
     }
 
     function updatePrice(address nft, uint256 tokenId, uint256 newPrice) external {
         require(newPrice > 0, "Invalid price");
-        
+
         bytes32 key = listingKey(nft, tokenId);
         Listing storage item = listings[key];
 
@@ -99,10 +134,10 @@ contract TicketMarketplace is ReentrancyGuard {
         IERC721(item.nft).safeTransferFrom(item.seller, msg.sender, item.tokenId);
 
         uint256 platformFee = (msg.value * platformFeeBps) / 10000;
-        
+
         uint256 royaltyAmount = 0;
         address royaltyReceiver = address(0);
-        
+
         try IERC2981(item.nft).royaltyInfo(item.tokenId, msg.value) returns (address receiver, uint256 amount) {
             royaltyReceiver = receiver;
             royaltyAmount = amount;

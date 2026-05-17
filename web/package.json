@@ -12,7 +12,9 @@
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev",
     "prisma:studio": "dotenv -e .env.local -- prisma studio",
     "prisma:seed": "dotenv -e .env.local -- node prisma/seed.mjs",
-    "event:link:contract": "dotenv -e .env.local -- node scripts/link-event-contract.mjs"
+    "event:link:contract": "dotenv -e .env.local -- node scripts/link-event-contract.mjs",
+    "reset:chain": "dotenv -e .env.local -- node scripts/reset-blockchain-link.mjs",
+    "demo:setup": "dotenv -e .env.local -- node scripts/demo-setup.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

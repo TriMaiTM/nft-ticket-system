@@ -96,19 +96,18 @@ contract EventTicketNFT is ERC721URIStorage, ERC2981, Ownable, ReentrancyGuard {
         if (tier.minted >= tier.maxSupply) revert TierSoldOut();
         if (msg.value != tier.price) revert IncorrectPayment();
 
-        tokenId = _mintTicket(msg.sender, tierId, tokenURI_);
+        tokenId = _mintTicket(msg.sender, tierId, tokenURI_, true);
         emit TicketMinted(msg.sender, tokenId, tierId);
     }
 
     function organizerMint(address to, uint8 tierId, string calldata tokenURI_) external onlyOwner returns (uint256 tokenId) {
         if (nextTokenId >= maxSupply) revert MintSoldOut();
-        if (walletMinted[to] >= maxPerWallet) revert MaxPerWalletExceeded();
 
         Tier storage tier = tiers[tierId];
         if (!tier.exists) revert InvalidTier();
         if (tier.minted >= tier.maxSupply) revert TierSoldOut();
 
-        tokenId = _mintTicket(to, tierId, tokenURI_);
+        tokenId = _mintTicket(to, tierId, tokenURI_, false);
         emit TicketMinted(to, tokenId, tierId);
     }
 
@@ -124,10 +123,9 @@ contract EventTicketNFT is ERC721URIStorage, ERC2981, Ownable, ReentrancyGuard {
 
         for (uint256 i = 0; i < recipients.length; i++) {
             if (nextTokenId >= maxSupply) revert MintSoldOut();
-            if (walletMinted[recipients[i]] >= maxPerWallet) revert MaxPerWalletExceeded();
             if (tier.minted >= tier.maxSupply) revert TierSoldOut();
 
-            uint256 tokenId = _mintTicket(recipients[i], tierId, tokenURIs[i]);
+            uint256 tokenId = _mintTicket(recipients[i], tierId, tokenURIs[i], false);
             emit TicketMinted(recipients[i], tokenId, tierId);
         }
     }
@@ -166,6 +164,16 @@ contract EventTicketNFT is ERC721URIStorage, ERC2981, Ownable, ReentrancyGuard {
         return tier;
     }
 
+    function getTierPrice(uint8 tierId) external view returns (uint256) {
+        Tier storage tier = tiers[tierId];
+        if (!tier.exists) revert InvalidTier();
+        return tier.price;
+    }
+
+    function getTokenTierId(uint256 tokenId) external view returns (uint8) {
+        return tokenIdToTierId[tokenId];
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -190,10 +198,17 @@ contract EventTicketNFT is ERC721URIStorage, ERC2981, Ownable, ReentrancyGuard {
         return super._update(to, tokenId, auth);
     }
 
-    function _mintTicket(address to, uint8 tierId, string calldata tokenURI_) internal returns (uint256 tokenId) {
+    function _mintTicket(
+        address to,
+        uint8 tierId,
+        string calldata tokenURI_,
+        bool countTowardsLimit
+    ) internal returns (uint256 tokenId) {
         Tier storage tier = tiers[tierId];
 
-        walletMinted[to] += 1;
+        if (countTowardsLimit) {
+            walletMinted[to] += 1;
+        }
         tier.minted += 1;
         tokenId = ++nextTokenId;
 

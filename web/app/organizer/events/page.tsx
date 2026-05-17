@@ -136,6 +136,11 @@ export default async function OrganizerEventsPage() {
 
                 return (
                   <article className="event-card" key={event.id}>
+                    {event.bannerImage && (
+                      <div style={{ width: "100%", height: "160px", overflow: "hidden", borderRadius: "12px", marginBottom: "16px" }}>
+                        <img src={event.bannerImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    )}
                     <div className="event-card-top">
                       <span className="event-status">{event.status}</span>
                       <span className="event-chain">
@@ -168,10 +173,17 @@ export default async function OrganizerEventsPage() {
                       </div>
                     </div>
 
-                    <Link href={`/events/${event.id}`} className="pill-button pill-button-dark event-card-cta">
+                    <div style={{ display: "flex", gap: "12px", width: "100%", marginTop: "16px" }}>
+                      <Link href={`/organizer/events/${event.id}`} className="pill-button pill-button-dark" style={{ flex: 1, marginTop: 0 }}>
+                        <span className="pill-button-glow" aria-hidden="true" />
+                        <span className="pill-button-inner">Manage Event</span>
+                      </Link>
+
+                      <Link href={`/events/${event.id}`} className="pill-button pill-button-dark" style={{ flex: 1, marginTop: 0 }}>
                       <span className="pill-button-glow" aria-hidden="true" />
-                      <span className="pill-button-inner">View Event</span>
-                    </Link>
+                        <span className="pill-button-inner">View Public</span>
+                      </Link>
+                    </div>
 
                     {event.contractAddress ? (
                       <WithdrawButton contractAddress={event.contractAddress} />

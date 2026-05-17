@@ -8,6 +8,7 @@ type EventCardProps = {
   startDate: Date;
   status: "DRAFT" | "PUBLISHED" | "ONGOING" | "ENDED" | "CANCELLED";
   chainId: string | null;
+  bannerImage?: string | null;
   ticketSummary: {
     minPrice: number | null;
     maxPrice: number | null;
@@ -37,10 +38,16 @@ export function EventCard({
   startDate,
   status,
   chainId,
+  bannerImage,
   ticketSummary,
 }: EventCardProps) {
   return (
     <article className="event-card">
+      {bannerImage && (
+        <div style={{ width: "100%", height: "160px", overflow: "hidden", borderRadius: "12px", marginBottom: "16px" }}>
+          <img src={bannerImage} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+      )}
       <div className="event-card-top">
         <span className="event-status">{status}</span>
         <span className="event-chain">{chainId ?? "Unknown chain"}</span>

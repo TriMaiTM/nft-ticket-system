@@ -4,36 +4,41 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const AMOY_RPC_URL = process.env.AMOY_RPC_URL ?? "";
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "";
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY ?? "";
+const SEPOLIA_RPC_URL =
+  process.env.SEPOLIA_RPC_URL ?? "https://sepolia.drpc.org";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? "";
+
+const accounts = PRIVATE_KEY ? [PRIVATE_KEY] : [];
 
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.26",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
+      optimizer: { enabled: true, runs: 200 },
       evmVersion: "cancun",
     },
   },
   networks: {
-    hardhat: {
-      hardfork: "cancun",
-    },
-    amoy: {
-      url: AMOY_RPC_URL,
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
-      chainId: 80002,
-      gasPrice: 30_000_000_000,
+    sepolia: {
+      url: SEPOLIA_RPC_URL,
+      accounts,
+      chainId: 11155111,
+      gasPrice: 20_000_000_000,
     },
   },
   etherscan: {
-    apiKey: {
-      polygonAmoy: POLYGONSCAN_API_KEY,
-    },
+    apiKey: { sepolia: ETHERSCAN_API_KEY },
+    customChains: [
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: "https://api-sepolia.etherscan.io/api",
+          browserURL: "https://sepolia.etherscan.io",
+        },
+      },
+    ],
   },
   paths: {
     sources: "./contracts",

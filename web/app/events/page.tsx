@@ -33,6 +33,7 @@ export default async function EventsPage() {
       title: event.title,
       description: event.description,
       venue: event.venue,
+      bannerImage: event.bannerImage,
       startDate: event.startDate,
       status: event.status,
       chainId: event.chainId,

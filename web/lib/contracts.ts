@@ -11,6 +11,24 @@ export const eventTicketNftAbi = [
   },
   {
     type: "function",
+    name: "organizerMint",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "tierId", type: "uint8" },
+      { name: "tokenURI_", type: "string" },
+    ],
+    outputs: [{ name: "tokenId", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "nextTokenId",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "withdraw",
     stateMutability: "nonpayable",
     inputs: [],
@@ -70,6 +88,27 @@ export const eventTicketNftAbi = [
       { name: "operator", type: "address" },
     ],
     outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "transferable",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "setTransferable",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "enabled", type: "bool" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "setEventEnded",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "ended", type: "bool" }],
+    outputs: [],
   },
   {
     type: "event",

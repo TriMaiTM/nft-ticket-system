@@ -15,7 +15,10 @@ type CreateEventArgs = {
 };
 
 function parseTierJson(raw: string): TierArg[] {
-  const parsed = JSON.parse(raw) as Array<{ priceEth?: string; maxSupply?: number | string }>;
+  const parsed = JSON.parse(raw) as Array<{
+    priceEth?: string;
+    maxSupply?: number | string;
+  }>;
 
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error("The --tiers argument must be a non-empty JSON array.");
@@ -26,7 +29,9 @@ function parseTierJson(raw: string): TierArg[] {
     const maxSupply = BigInt(tier.maxSupply ?? 0);
 
     if (!priceEth || maxSupply <= 0n) {
-      throw new Error(`Invalid tier at index ${index}. Expected { priceEth, maxSupply }.`);
+      throw new Error(
+        `Invalid tier at index ${index}. Expected { priceEth, maxSupply }.`
+      );
     }
 
     return { priceEth, maxSupply };

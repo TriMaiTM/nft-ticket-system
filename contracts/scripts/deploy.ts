@@ -15,7 +15,9 @@ async function main() {
   const eventFactory = await factory.deploy();
   await eventFactory.waitForDeployment();
 
-  const marketplaceFactory = await ethers.getContractFactory("TicketMarketplace");
+  const marketplaceFactory = await ethers.getContractFactory(
+    "TicketMarketplace"
+  );
   // Fee Recipient: deployer.address, Platform Fee: 250 bps (2.5%)
   const marketplace = await marketplaceFactory.deploy(deployer.address, 250);
   await marketplace.waitForDeployment();

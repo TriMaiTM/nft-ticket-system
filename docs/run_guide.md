@@ -15,205 +15,131 @@ npm -v
 ## 2. Cau truc hien tai
 - Thu muc web: ung dung Next.js (landing page da implement).
 - Thu muc contracts: da setup Hardhat + TypeScript + OpenZeppelin, co contracts va test baseline.
+- Thu muc automation: script start.ps1 (snapshot-based), fund.ps1.
 
-## 3. Chay web app local (development)
-Truoc khi chay wallet connect, tao file `.env.local` trong thu muc `web` (copy tu `.env.example`):
+## 3. Quick Start (Khuyen nghi)
 
-```env
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_WALLETCONNECT_PROJECT_ID
-DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_DB_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres
-AUTH_SECRET=CHANGE_TO_A_LONG_RANDOM_SECRET
+### Lan dau tien (deploy + seed + save snapshot):
+```powershell
+cd D:\HK8\TicketNFT
+powershell -ExecutionPolicy Bypass -File .\automation\start.ps1
 ```
 
-Neu chua co project id, tao tren WalletConnect Cloud de lay id.
-Neu dung Supabase, lay DB password va project ref trong Project Settings -> Database.
+Script se tu dong:
+1. Start Hardhat node (port 8545)
+2. Deploy EventFactory + TicketMarketplace
+3. Fund organizer wallet
+4. Seed database
+5. Save snapshot (lan sau khong can deploy lai)
+6. Start Next.js dev server
 
-Di chuyen vao thu muc web va cai dependencies:
-
+### Lan sau (restore snapshot, giu nguyen moi thu):
 ```powershell
-Set-Location "D:\HK8\TicketNFT\web"
-npm install
+powershell -ExecutionPolicy Bypass -File .\automation\start.ps1
 ```
 
-Chay dev server:
-
+### Bat buoc deploy lai (xoa snapshot cu):
 ```powershell
-npm run dev
+powershell -ExecutionPolicy Bypass -File .\automation\start.ps1 -Fresh
 ```
 
-Mo trinh duyet:
-- URL mac dinh: http://localhost:3000
-
-Neu port 3000 da bi chiem, Next.js se goi y port khac (vi du 3001).
-
-Kiem tra nhanh wallet stack:
-- Nut `Connect Wallet` xuat hien o navbar.
-- Ket noi vi va dam bao network la Polygon Amoy.
-
-Khoi tao Prisma schema (lan dau):
-
-Luu y: voi Supabase, uu tien `prisma db push` de dong bo schema nhanh.
-
+### Chi start Hardhat (khong start Next.js):
 ```powershell
-Set-Location "D:\HK8\TicketNFT\web"
-npm run prisma:generate
-npm run prisma:push
+powershell -ExecutionPolicy Bypass -File .\automation\start.ps1 -SkipWeb
 ```
 
-Neu ban muon tao migration file (thay vi push), van co the dung:
+## 4. Cau hinh MetaMask cho Local Hardhat
 
+- Network Name: Hardhat Local
+- RPC URL: http://127.0.0.1:8545
+- Chain ID: 31337
+- Currency Symbol: ETH
+
+Import tai khoan tu Hardhat (co 20 ETH mac dinh):
+- Private Key: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80` (Account #0, 10000 ETH)
+
+Hoac su dung nut "Get ETH" tren UI de nạp 50 ETH tu dong.
+
+## 5. Workflow Tao Event va Ban Ve
+
+1. Mo http://localhost:3000
+2. Ket noi vi MetaMask (network Hardhat Local)
+3. Nhan "Sign In Wallet" de dang nhap
+4. Nhan "Create Event" de tao su kien (se tu dong nang role len ORGANIZER)
+5. Vao "My Events" -> nhan "Publish On-chain" de deploy ticket contract len Hardhat
+6. Switch sang tai khoan buyer -> vao "Browse Events" -> "Mua ve"
+7. Vao "My Tickets" de xem QR code
+8. Vao "Check-in Scanner" de quet QR
+
+## 6. Quan ly ETH
+
+- Nut "Get ETH" xuat hien tren navbar khi ket noi Hardhat local
+- Hoac chay: `powershell -ExecutionPolicy Bypass -File .\automation\fund.ps1 -WalletAddress 0xYourAddress`
+
+## 7. Cac lenh rieng le
+
+### Web App:
 ```powershell
-npm run prisma:migrate -- --name init
+cd D:\HK8\TicketNFT\web
+npm install                # Cai dependencies
+npm run dev                # Chay dev server
+npm run build              # Build production
+npm run start              # Chay production local
+npm run lint               # Kiem tra code
+npm run prisma:generate    # Generate Prisma client
+npm run prisma:push        # Push schema len DB
+npm run prisma:seed        # Seed demo data
+npm run prisma:studio      # Mo Prisma Studio
 ```
 
-Wallet auth MVP API da san sang:
-- `POST /api/auth/nonce`
-- `POST /api/auth/verify`
-- `GET /api/auth/me`
-- `POST /api/auth/logout`
-
-Phan quyen vai tro UI:
-- User thuong (`USER`): thay Ticket Store (`/events`) + My Tickets (`/my-tickets`) va quyen mua ve.
-- Ban to chuc (`ORGANIZER`/`ADMIN`): thay Organizer Workspace, co My Events (`/organizer/events`) va Create Event (`/organizer/events/new`).
-- Event moi tao se o trang thai draft. Sau do ban to chuc bam `Publish On-chain` trong `My Events` de tao contract ticket tren chain.
-- Vi moi dang nhap lan dau mac dinh la `USER`, nhung khi bam Create Event lan dau he thong se tu dong nang role len `ORGANIZER` (khong can vao Supabase sua tay).
-- Public Ticket Store chi hien event da publish on-chain (`contractAddress != null`). Draft chi organizer thay trong Workspace.
-- MVP contract hien tai chi ho tro 1 gia mint cho 1 event. Neu muon co nhieu hang ve voi nhieu gia khac nhau, can nang cap contract truoc khi publish.
-
-Seed du lieu demo (de test trang events nhanh):
-
+### Contracts:
 ```powershell
-Set-Location "D:\HK8\TicketNFT\web"
-npm run prisma:seed
+cd D:\HK8\TicketNFT\contracts
+npm install                # Cai dependencies
+npm run compile            # Compile contracts
+npm run test               # Chay tests
+npm run deploy:local       # Deploy len Hardhat local
+npm run deploy:amoy        # Deploy len Amoy testnet
 ```
 
-Kiem tra wallet auth ngay tren UI:
-- Bam `Connect Wallet`.
-- Sau khi ket noi thanh cong, nut doi thanh `Sign In Wallet`.
-- Bam `Sign In Wallet` va ky message tren vi.
-- Neu thanh cong, nut hien dia chi vi va co `Sign out`.
-
-Kiem tra buy ticket flow:
-- Vao `/events` -> chon event -> vao detail.
-- Bam `Buy Ticket` tai 1 tier.
-- App bat buoc event da co `contractAddress` roi moi mint on-chain va xac nhan vao DB.
-- Neu event chua duoc publish, nut mua se hien `Not Live Yet` va khong cho mua.
-- Ban to chuc mo `My Events` -> bam `Publish On-chain` de dua event len chain.
-- Vao `/my-tickets` de kiem tra ticket vua mua.
-
-## 4. Build thu production
-Trong thu muc web:
-
+### Utilities:
 ```powershell
-npm run build
+# Clear event data (giu User + Auth)
+cd D:\HK8\TicketNFT\web
+node clear-events.js
+
+# Check blockchain state
+node check-state.js
 ```
 
-Neu build thanh cong, ban se thay thong tin route duoc prerender.
+## 8. Loi thuong gap
 
-## 5. Chay ban production local
-Sau khi build thanh cong:
+### "Failed to create sign-in nonce"
+- Nguyen nhan: Database chua ket noi duoc
+- Kiem tra DATABASE_URL trong .env.local
+- Chay: `npm run prisma:push`
+- Kiem tra Supabase project con active khong
 
-```powershell
-npm run start
-```
+### "Transaction failed" / "Insufficient funds"
+- Nhan nut "Get ETH" tren hoac chay fund script
 
-Mo trinh duyet:
-- URL mac dinh: http://localhost:3000
+### Data bi mat sau khi restart
+- Dung `start.ps1` (khong phai `start-local.ps1` cu)
+- Script se tu restore snapshot
 
-## 6. Kiem tra chat luong code
-Trong thu muc web:
+### Contract address thay doi
+- `start.ps1` tu dong cap nhat .env.local
+- Neu dung lenh rieng le, chay: `npm run event:link:contract`
 
-```powershell
-npm run lint
-```
-
-## 7. Quy trinh chay nhanh de test giao dien
-Dung quy trinh nay moi khi pull code moi:
-
-```powershell
-Set-Location "D:\HK8\TicketNFT\web"
-npm install
-npm run lint
-npm run build
-npm run dev
-```
-
-## 8. Loi thuong gap va cach xu ly
-### Loi: node khong duoc nhan dien
-- Mo terminal moi.
-- Kiem tra lai Node.js da cai dung chua: node -v
-- Neu chua co, cai Node.js LTS roi mo lai VS Code.
-
-### Loi: port 3000 dang duoc dung
-Co the chay tren port khac:
+## 9. Kiem tra chat luong code
 
 ```powershell
-npm run dev -- -p 3001
-```
-
-### Loi: dependency conflict sau khi doi nhanh
-Thu xoa node_modules va cai lai:
-
-```powershell
-Set-Location "D:\HK8\TicketNFT\web"
-Remove-Item -Recurse -Force node_modules
-Remove-Item -Force package-lock.json
-npm install
-```
-
-## 9. Chay contracts (Hardhat)
-Di chuyen vao thu muc contracts va cai dependencies:
-
-```powershell
-Set-Location "D:\HK8\TicketNFT\contracts"
-npm install
-```
-
-Compile smart contracts:
-
-```powershell
-npm run compile
-```
-
-Chay test smart contracts:
-
-```powershell
-npm run test
-```
-
-Deploy local (network hardhat):
-
-```powershell
-npm run deploy:local
-```
-
-Deploy testnet Polygon Amoy:
-
-1. Tao file `.env` trong thu muc contracts (co the copy tu `.env.example`).
-2. Dien gia tri:
-  - `AMOY_RPC_URL`
-  - `PRIVATE_KEY`
-  - `POLYGONSCAN_API_KEY` (khuyen nghi co de verify ve sau)
-
-```powershell
-Set-Location "D:\HK8\TicketNFT\contracts"
-npm run deploy:amoy
-```
-
-## 10. Quy trinh test nhanh toan bo
-Sau moi lan cap nhat code:
-
-```powershell
-Set-Location "D:\HK8\TicketNFT\contracts"
+# Contracts
+cd D:\HK8\TicketNFT\contracts
 npm run test
 
-Set-Location "D:\HK8\TicketNFT\web"
+# Web
+cd D:\HK8\TicketNFT\web
 npm run lint
 npm run build
 ```
-
-## 11. Ghi chu cho giai doan tiep theo
-- Khi setup database (Prisma/PostgreSQL), bo sung huong dan:
-  - tao file .env.local
-  - migrate schema
-  - seed data

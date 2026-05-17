@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { parseEventLogs, parseEther } from "viem";
+import { encodeFunctionData, parseEther, parseEventLogs } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { eventTicketNftAbi, mapLegacyTierNameToId } from "@/lib/contracts";
 
@@ -12,25 +12,6 @@ type BuyTicketButtonProps = {
   onchainTierId: number | null;
   eventContractAddress: string | null;
 };
-
-/** Map on-chain revert reasons to user-friendly messages */
-function friendlyBuyError(raw: string): string {
-  const lower = raw.toLowerCase();
-
-  if (lower.includes("tiersoldout")) return "Vé hạng này đã bán hết.";
-  if (lower.includes("incorrectpayment")) return "Số tiền gửi không đúng giá vé.";
-  if (lower.includes("maxsupplyreached")) return "Đã bán hết toàn bộ vé cho sự kiện này.";
-  if (lower.includes("maxperwalletreached") || lower.includes("exceedmaxperwallet"))
-    return "Bạn đã mua tối đa số vé cho phép.";
-  if (lower.includes("insufficient funds") || lower.includes("insufficient balance"))
-    return "Ví không đủ số dư để mua vé.";
-  if (lower.includes("user rejected") || lower.includes("user denied"))
-    return "Bạn đã huỷ giao dịch.";
-  if (lower.includes("nonce"))
-    return "Lỗi nonce ví. Hãy reset tài khoản trong MetaMask (Settings → Advanced → Clear activity tab data).";
-
-  return raw;
-}
 
 export function BuyTicketButton({
   tierId,
@@ -56,25 +37,86 @@ export function BuyTicketButton({
       if (!walletClient || !publicClient || !address) {
         throw new Error("Vui lòng kết nối ví trước khi mua vé.");
       }
-
       if (!eventContractAddress) {
-        throw new Error("Sự kiện chưa được đưa lên blockchain. Vui lòng đợi organizer publish.");
+        throw new Error("Sự kiện chưa được đưa lên blockchain.");
       }
 
       const targetTierId = onchainTierId ?? mapLegacyTierNameToId(tierName);
 
-      const hash = await walletClient.writeContract({
-        address: eventContractAddress as `0x${string}`,
+      // Encode function call
+      const callData = encodeFunctionData({
         abi: eventTicketNftAbi,
         functionName: "mint",
         args: [targetTierId, `ipfs://ticketnft/${tierId}/${Date.now()}`],
-        account: address,
-        value: parseEther(tierPrice),
       });
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      const txHash = receipt.transactionHash;
+      // Call MetaMask directly via request() — bypasses viem's RPC calls
+      const provider = await walletClient.getChainId().then(() => {
+        // Access the underlying EIP-1193 provider
+        return (
+          (walletClient as any).transport?.value ||
+          (walletClient as any).request
+        );
+      });
 
+      // Use window.ethereum directly for maximum reliability
+      const ethereum = (window as any).ethereum;
+      if (!ethereum) {
+        throw new Error("MetaMask not found");
+      }
+
+      // Ensure MetaMask uses a reliable RPC (switch to Sepolia if not already)
+      try {
+        await ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xAA36A7" }], // Sepolia
+        });
+      } catch {
+        // Chain not added yet, try adding it
+        try {
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: "0xAA36A7",
+                chainName: "Sepolia",
+                nativeCurrency: {
+                  name: "SepoliaETH",
+                  symbol: "ETH",
+                  decimals: 18,
+                },
+                rpcUrls: [
+                  "https://eth-sepolia.g.alchemy.com/v2/" +
+                    (process.env.NEXT_PUBLIC_ALCHEMY_KEY ?? ""),
+                ],
+                blockExplorerUrls: ["https://sepolia.etherscan.io"],
+              },
+            ],
+          });
+        } catch {}
+      }
+
+      const txHash = await ethereum.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: address,
+            to: eventContractAddress,
+            data: callData,
+            value: "0x" + parseEther(tierPrice).toString(16),
+            gas: "0x493E0", // 300000
+          },
+        ],
+      });
+
+      setMessage("Đang chờ xác nhận từ blockchain...");
+
+      // Wait for receipt
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      // Parse TicketMinted event
       const mintedLogs = parseEventLogs({
         abi: eventTicketNftAbi,
         eventName: "TicketMinted",
@@ -82,46 +124,47 @@ export function BuyTicketButton({
       });
 
       const minted = mintedLogs.find((log) =>
-        log.args?.to ? log.args.to.toLowerCase() === address.toLowerCase() : false
+        log.args?.to
+          ? log.args.to.toLowerCase() === address.toLowerCase()
+          : false,
       );
 
-      const tokenId = minted?.args?.tokenId ? Number(minted.args.tokenId) : undefined;
-      const mintedTierId =
-        typeof minted?.args?.tierId === "number"
-          ? minted.args.tierId
-          : minted?.args?.tierId !== undefined
-            ? Number(minted.args.tierId)
-            : undefined;
+      const tokenId = minted?.args?.tokenId
+        ? Number(minted.args.tokenId)
+        : undefined;
 
-      if (!tokenId || mintedTierId === undefined) {
-        throw new Error("Giao dịch thành công nhưng không thể xác nhận thông tin vé. Vui lòng kiểm tra ví.");
+      if (!tokenId) {
+        throw new Error("Không thể xác nhận tokenId từ blockchain.");
       }
 
+      // Sync with DB
       const response = await fetch("/api/tickets/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ tierId, txHash, tokenId, onchainTierId: mintedTierId }),
+        body: JSON.stringify({
+          tierId,
+          txHash,
+          tokenId,
+          onchainTierId: targetTierId,
+        }),
       });
 
       const payload = (await response.json()) as {
-        data?: { tokenId: number; txHash?: string };
+        data?: { tokenId: number };
         error?: string;
       };
 
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Không thể lưu thông tin vé. Vui lòng liên hệ hỗ trợ.");
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error ?? "Không thể lưu thông tin vé.");
       }
 
       setIsSuccess(true);
-      setMessage(`Mua vé thành công! Token #${payload.data?.tokenId ?? "?"}`);
+      setMessage(`Mua vé thành công! Token #${payload.data.tokenId}`);
     } catch (error) {
-      const raw = error instanceof Error ? error.message : "Không thể mua vé. Vui lòng thử lại.";
-      if (raw === "Unauthorized") {
-        setMessage("Vui lòng đăng nhập ví trước khi mua vé.");
-      } else {
-        setMessage(friendlyBuyError(raw));
-      }
+      console.error("Buy ticket error:", error);
+      const raw = error instanceof Error ? error.message : "Không thể mua vé.";
+      setMessage(raw);
     } finally {
       setIsBuying(false);
     }
@@ -137,12 +180,20 @@ export function BuyTicketButton({
       >
         <span className="pill-button-glow" aria-hidden="true" />
         <span className="pill-button-inner">
-          {isBuying ? "Đang xử lý..." : eventContractAddress ? "Mua vé" : "Chưa mở bán"}
+          {isBuying
+            ? "Đang xử lý..."
+            : eventContractAddress
+              ? "Mua vé"
+              : "Chưa mở bán"}
         </span>
       </button>
 
       {message ? (
-        <p className={isSuccess ? "buy-ticket-message ok" : "buy-ticket-message err"}>
+        <p
+          className={
+            isSuccess ? "buy-ticket-message ok" : "buy-ticket-message err"
+          }
+        >
           {message}
         </p>
       ) : null}

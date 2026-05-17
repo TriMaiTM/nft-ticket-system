@@ -102,7 +102,8 @@ export default async function MyTicketsPage() {
             <p className="events-eyebrow">Wallet Inventory</p>
             <h1 className="events-title">My NFT Tickets</h1>
             <p className="events-subtitle">
-              Track every ticket in your wallet, including token ID and event schedule.
+              Track every ticket in your wallet, including token ID and event
+              schedule.
             </p>
           </header>
 
@@ -110,7 +111,11 @@ export default async function MyTicketsPage() {
             <div className="events-empty">
               <p>You do not own any tickets yet.</p>
               <p>
-                Start from <Link href="/events" className="event-inline-link">Browse Events</Link>.
+                Start from{" "}
+                <Link href="/events" className="event-inline-link">
+                  Browse Events
+                </Link>
+                .
               </p>
             </div>
           ) : (
@@ -118,37 +123,68 @@ export default async function MyTicketsPage() {
               {tickets.map((ticket) => (
                 <article className="event-card" key={ticket.id}>
                   <div className="event-card-top">
-                    <span className="event-status">{ticket.status === "LISTED" ? "ĐANG RAO BÁN" : ticket.status}</span>
+                    <span className="event-status">
+                      {ticket.status === "LISTED"
+                        ? "ĐANG RAO BÁN"
+                        : ticket.status}
+                    </span>
                     <span className="event-chain">Token #{ticket.tokenId}</span>
                   </div>
 
                   <h3 className="event-title">{ticket.event.title}</h3>
                   <p className="event-description">
-                    Tier: {ticket.tier.name} · {Number(ticket.tier.price).toFixed(3)} POL
+                    Tier: {ticket.tier.name} ·{" "}
+                    {Number(ticket.tier.price).toFixed(3)} POL
                   </p>
 
                   <div className="event-meta-grid">
                     <div>
                       <p className="event-meta-label">Venue</p>
-                      <p className="event-meta-value">{ticket.event.venue ?? "TBA"}</p>
+                      <p className="event-meta-value">
+                        {ticket.event.venue ?? "TBA"}
+                      </p>
                     </div>
                     <div>
                       <p className="event-meta-label">Start</p>
-                      <p className="event-meta-value">{formatDate(ticket.event.startDate)}</p>
+                      <p className="event-meta-value">
+                        {formatDate(ticket.event.startDate)}
+                      </p>
                     </div>
                     <div>
                       <p className="event-meta-label">Chain</p>
-                      <p className="event-meta-value">{ticket.event.chainId ?? "Unknown"}</p>
+                      <p className="event-meta-value">
+                        {ticket.event.chainId ?? "Unknown"}
+                      </p>
                     </div>
                     <div>
                       <p className="event-meta-label">Mint Tx</p>
-                      <p className="event-meta-value tx-line">{ticket.txHash ?? "Pending"}</p>
+                      <p className="event-meta-value tx-line">
+                        {ticket.txHash ?? "Pending"}
+                      </p>
                     </div>
                   </div>
                   {ticket.status === "LISTED" ? (
-                    <div style={{ marginTop: "16px", textAlign: "center", padding: "16px", background: "rgba(255,255,255,0.05)", borderRadius: "8px" }}>
-                      <p style={{ margin: 0, color: "#aaa" }}>Vé đang được rao bán trên Marketplace.</p>
-                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#666" }}>Bạn không thể lấy mã QR lúc này.</p>
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        textAlign: "center",
+                        padding: "16px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <p style={{ margin: 0, color: "#aaa" }}>
+                        Vé đang được rao bán trên Marketplace.
+                      </p>
+                      <p
+                        style={{
+                          margin: "4px 0 0",
+                          fontSize: "12px",
+                          color: "#666",
+                        }}
+                      >
+                        Bạn không thể lấy mã QR lúc này.
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -158,13 +194,17 @@ export default async function MyTicketsPage() {
                         tokenId={ticket.tokenId}
                         ownerAddress={ticket.owner.walletAddress}
                       />
-                      {ticket.status === "MINTED" && !ticket.isUsed && ticket.event.contractAddress && (
-                        <ListTicketButton
-                          ticketId={ticket.id}
-                          tokenId={ticket.tokenId}
-                          contractAddress={ticket.event.contractAddress}
-                        />
-                      )}
+                      {ticket.status === "MINTED" &&
+                        !ticket.isUsed &&
+                        ticket.event.contractAddress && (
+                          <ListTicketButton
+                            ticketId={ticket.id}
+                            tokenId={ticket.tokenId}
+                            contractAddress={ticket.event.contractAddress}
+                            tierPrice={ticket.tier.price.toString()}
+                            tierName={ticket.tier.name}
+                          />
+                        )}
                     </>
                   )}
                 </article>

@@ -20,8 +20,13 @@ describe("EventFactory + EventTicketNFT", function () {
       maxPerWallet: 2,
     });
 
-    const [eventAddress] = await factory.getEventsByOrganizer(organizer.address);
-    const eventContract = await ethers.getContractAt("EventTicketNFT", eventAddress);
+    const [eventAddress] = await factory.getEventsByOrganizer(
+      organizer.address
+    );
+    const eventContract = await ethers.getContractAt(
+      "EventTicketNFT",
+      eventAddress
+    );
 
     return { factory, organizer, buyer, other, eventContract };
   }
@@ -47,7 +52,9 @@ describe("EventFactory + EventTicketNFT", function () {
 
     expect(await factory.totalEvents()).to.equal(1);
 
-    const organizerEvents = await factory.getEventsByOrganizer(organizer.address);
+    const organizerEvents = await factory.getEventsByOrganizer(
+      organizer.address
+    );
     expect(organizerEvents).to.have.lengthOf(1);
   });
 
@@ -155,7 +162,10 @@ describe("EventFactory + EventTicketNFT", function () {
       .mint(0, "ipfs://m1", { value: ethers.parseEther("0.01") });
 
     const salePrice = ethers.parseEther("1");
-    const [receiver, royaltyAmount] = await eventContract.royaltyInfo(1, salePrice);
+    const [receiver, royaltyAmount] = await eventContract.royaltyInfo(
+      1,
+      salePrice
+    );
 
     expect(receiver).to.equal(organizer.address);
     expect(royaltyAmount).to.equal(ethers.parseEther("0.05"));
@@ -194,5 +204,42 @@ describe("EventFactory + EventTicketNFT", function () {
     await expect(
       eventContract.connect(organizer).useTicket(1)
     ).to.be.revertedWithCustomError(eventContract, "TicketAlreadyUsed");
+  });
+
+  it("organizerMint does not consume maxPerWallet slots", async function () {
+    const { organizer, buyer, eventContract } = await deployFixture();
+
+    // maxPerWallet is 2, tier 0 has maxSupply 2
+    // Organizer mints to buyer — should NOT count towards limit
+    await eventContract
+      .connect(organizer)
+      .organizerMint(buyer.address, 0, "ipfs://airdrop-1");
+
+    // Buyer should still be able to mint 2 tickets (maxPerWallet = 2)
+    await eventContract
+      .connect(buyer)
+      .mint(0, "ipfs://m1", { value: ethers.parseEther("0.01") });
+
+    // Tier 0 is now sold out (maxSupply=2, 1 organizer + 1 buyer minted)
+    // Check walletMinted is only 1 (not 2)
+    expect(await eventContract.walletMinted(buyer.address)).to.equal(1);
+    expect(await eventContract.ownerOf(1)).to.equal(buyer.address);
+    expect(await eventContract.ownerOf(2)).to.equal(buyer.address);
+  });
+
+  it("batchOrganizerMint does not consume maxPerWallet slots", async function () {
+    const { organizer, buyer, other, eventContract } = await deployFixture();
+
+    // Organizer batch mints to multiple addresses
+    await eventContract
+      .connect(organizer)
+      .batchOrganizerMint([buyer.address, other.address], 0, [
+        "ipfs://batch-1",
+        "ipfs://batch-2",
+      ]);
+
+    // walletMinted should be 0 for both
+    expect(await eventContract.walletMinted(buyer.address)).to.equal(0);
+    expect(await eventContract.walletMinted(other.address)).to.equal(0);
   });
 });

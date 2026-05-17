@@ -19,6 +19,7 @@ type CreatePayload = {
   startDate: string;
   endDate: string;
   maxAttendees: number;
+  bannerImage: string;
   tiers: TierForm[];
 };
 
@@ -56,6 +57,7 @@ export default function OrganizerCreateEventPage() {
     startDate: "",
     endDate: "",
     maxAttendees: 500,
+    bannerImage: "",
     tiers: [createDefaultTier(0)],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -257,6 +259,15 @@ export default function OrganizerCreateEventPage() {
               <input
                 value={form.venue}
                 onChange={(e) => setForm((v) => ({ ...v, venue: e.target.value }))}
+              />
+            </label>
+
+            <label>
+              <span>Banner Image URL (optional)</span>
+              <input
+                value={form.bannerImage}
+                onChange={(e) => setForm((v) => ({ ...v, bannerImage: e.target.value }))}
+                placeholder="https://example.com/banner.jpg"
               />
             </label>
 

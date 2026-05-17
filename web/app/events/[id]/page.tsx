@@ -65,6 +65,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             ) : null}
           </header>
 
+          {event.bannerImage && (
+            <div style={{ width: "100%", height: "300px", overflow: "hidden", borderRadius: "16px", marginBottom: "32px", marginTop: "16px" }}>
+              <img src={event.bannerImage} alt={event.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+
           <div className="events-grid">
             {event.ticketTiers.map((tier) => (
               <article className="event-card" key={tier.id}>

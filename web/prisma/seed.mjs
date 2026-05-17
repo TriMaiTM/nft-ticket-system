@@ -2,6 +2,15 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+/**
+ * seed.mjs
+ *
+ * Tao demo organizer + event (DRAFT, chua co contractAddress).
+ * Sau khi organizer bam "Publish On-chain" tren UI, contractAddress se duoc cap nhat tu dong.
+ *
+ * Khong hardcode contractAddress vi moi lan deploy la co address moi.
+ */
+
 async function main() {
   const organizerWallet = "0x3dcc5d59d8f37fbd90d02db8adaf60fca2249e62";
 
@@ -30,12 +39,13 @@ async function main() {
       data: {
         organizerId: organizer.id,
         title: "TicketNFT Launch Night",
-        description: "Live demo for NFT ticketing with wallet auth and on-chain flows.",
+        description:
+          "Live demo for NFT ticketing with wallet auth and on-chain flows.",
         venue: "Ho Chi Minh City",
         startDate: new Date("2026-05-10T11:00:00.000Z"),
         endDate: new Date("2026-05-10T14:00:00.000Z"),
-        status: "PUBLISHED",
-        chainId: "80002",
+        status: "DRAFT",
+        chainId: "31337",
         maxAttendees: 500,
         ticketTiers: {
           create: [
@@ -65,7 +75,8 @@ async function main() {
       },
     });
 
-    console.log("Seed completed: created demo event and tiers");
+    console.log("Seed completed: created demo event and tiers (DRAFT)");
+    console.log("Next: Login as organizer -> My Events -> Publish On-chain");
   } else {
     console.log("Seed skipped: demo event already exists");
   }

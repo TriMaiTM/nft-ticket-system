@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       title?: string;
       description?: string;
       venue?: string;
+      bannerImage?: string;
       startDate?: string;
       endDate?: string;
       maxAttendees?: number;
@@ -181,6 +182,7 @@ export async function POST(request: NextRequest) {
         title: body.title,
         description: body.description,
         venue: body.venue,
+        bannerImage: body.bannerImage,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),
         maxAttendees: body.maxAttendees,
